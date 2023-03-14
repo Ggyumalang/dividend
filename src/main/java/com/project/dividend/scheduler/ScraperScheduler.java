@@ -27,10 +27,11 @@ public class ScraperScheduler {
     private final CompanyRepository companyRepository;
 
     private final DividendRepository dividendRepository;
+
     private final Scraper yahooFinanceScraper;
 
     //일정 주기마다 수행
-    @CacheEvict(value = CacheKey.KEY_FINANCE , allEntries = true)
+    @CacheEvict(value = CacheKey.KEY_FINANCE, allEntries = true)
     @Scheduled(cron = "${scheduler.scrap.yahoo}")
     public void yahooFinanceScheduling() {
         log.info(getClass().getSimpleName() + "started " + LocalDateTime.now());

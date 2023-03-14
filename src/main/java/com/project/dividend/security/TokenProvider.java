@@ -1,12 +1,9 @@
 package com.project.dividend.security;
 
 import com.project.dividend.service.MemberService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import lombok.AllArgsConstructor;
+import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,6 +14,7 @@ import org.springframework.util.StringUtils;
 import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class TokenProvider {
@@ -70,8 +68,25 @@ public class TokenProvider {
     public boolean validateToken(String token) {
         if (!StringUtils.hasText(token)) return false;
 
-        var claims = this.parseClaims(token);
-        return !claims.getExpiration().before(new Date());
+        try {
+            this.parseClaims(token);
+            return true;
+        } catch (SecurityException e) {
+            log.error("Invalid JWT signature.", e);
+            throw new JwtException("잘못된 JWT 시그니처");
+        } catch (MalformedJwtException e) {
+            log.error("Invalid JWT", e);
+            throw new JwtException("유효하지 않은 JWT");
+        } catch (ExpiredJwtException e) {
+            log.error("Expired JWT", e);
+            throw new JwtException("만료된 JWT");
+        } catch (UnsupportedJwtException e) {
+            log.error("Unsupported JWT", e);
+            throw new JwtException("지원하지않는 JWT");
+        } catch (IllegalArgumentException e) {
+            log.error("JWT claims string is empty.", e);
+            throw new JwtException("JWT claims이 공백");
+        }
     }
 
     private Claims parseClaims(String token) {

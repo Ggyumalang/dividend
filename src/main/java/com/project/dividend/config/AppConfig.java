@@ -9,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class AppConfig {
-
     @Bean
     public Trie<String, String> trie() {
         return new PatriciaTrie<>();

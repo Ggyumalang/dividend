@@ -1,10 +1,8 @@
 package com.project.dividend.persist.repository;
 
-import com.project.dividend.model.Dividend;
 import com.project.dividend.persist.entity.DividendEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;

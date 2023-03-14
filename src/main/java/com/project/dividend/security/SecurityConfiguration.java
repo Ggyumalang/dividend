@@ -22,6 +22,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     private final JwtAuthenticationFilter authenticationFilter;
 
+    private final JwtExceptionFilter jwtExceptionFilter;
+
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -29,10 +33,13 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                    .authorizeRequests()
-                        .antMatchers("/**/signup" , "/**/signin").permitAll()
+                .authorizeRequests()
+                .antMatchers("/**/signup", "/**/signin").permitAll()
                 .and()
-                .addFilterBefore(this.authenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .exceptionHandling().authenticationEntryPoint(this.jwtAuthenticationEntryPoint)
+                .and()
+                .addFilterBefore(this.authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(this.jwtExceptionFilter, JwtAuthenticationFilter.class);
     }
 
     @Override

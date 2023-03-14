@@ -1,7 +1,9 @@
 package com.project.dividend.service;
 
-import com.project.dividend.exception.impl.AlreadyExistUserException;
-import com.project.dividend.model.Auth;
+import com.project.dividend.exception.DividendException;
+import com.project.dividend.model.MemberDto;
+import com.project.dividend.model.SignIn;
+import com.project.dividend.model.SignUp;
 import com.project.dividend.persist.entity.MemberEntity;
 import com.project.dividend.persist.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import static com.project.dividend.model.constants.ErrorCode.*;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -22,29 +26,32 @@ public class MemberService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return this.memberRepository.findByUsername(username)
+        return memberRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("could not find user -> " + username));
     }
 
-    public MemberEntity register(Auth.SignUp member) {
-        boolean exists = this.memberRepository.existsByUsername(member.getUsername());
+    public MemberDto register(SignUp.Request request) {
+        boolean exists = memberRepository.existsByUsername(request.getUsername());
         if (exists) {
-            throw new AlreadyExistUserException();
+            throw new DividendException(ALREADY_EXIST_USER);
         }
-
-        member.setPassword(this.passwordEncoder.encode(member.getPassword()));
-        MemberEntity memberEntity = this.memberRepository.save(member.toEntity());
-        return memberEntity;
+        MemberEntity memberEntity = memberRepository.save(
+                MemberEntity.builder()
+                        .username(request.getUsername())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .roles(request.getRoles())
+                        .build());
+        return MemberDto.fromEntity(memberEntity);
     }
 
-    public MemberEntity authenticate(Auth.SignIn member) {
-        MemberEntity memberEntity = this.memberRepository.findByUsername(member.getUsername())
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 ID입니다."));
+    public MemberDto authenticate(SignIn.Request member) {
+        MemberEntity memberEntity = memberRepository.findByUsername(member.getUsername())
+                .orElseThrow(() -> new DividendException(USER_ID_NOT_FOUND));
 
-        if (!this.passwordEncoder.matches(member.getPassword(), memberEntity.getPassword())) {
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        if (!passwordEncoder.matches(member.getPassword(), memberEntity.getPassword())) {
+            throw new DividendException(PASSWORD_NOT_MATCHED);
         }
 
-        return memberEntity;
+        return MemberDto.fromEntity(memberEntity);
     }
 }

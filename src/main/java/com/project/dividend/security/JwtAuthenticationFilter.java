@@ -29,21 +29,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = this.resolveTokenFromRequest(request);
 
-        if(StringUtils.hasText(token) && this.tokenProvider.validateToken(token)){
+        if (StringUtils.hasText(token) && this.tokenProvider.validateToken(token)) {
             //토큰 유효성 검증
             Authentication authentication = this.tokenProvider.getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            log.info(String.format("[%s] -> %s", this.tokenProvider.getUsername(token) , request.getRequestURI()));
+            log.info(String.format("[%s] -> %s", this.tokenProvider.getUsername(token), request.getRequestURI()));
         }
 
-        filterChain.doFilter(request,response);
+        filterChain.doFilter(request, response);
     }
 
     private String resolveTokenFromRequest(HttpServletRequest request) {
         String token = request.getHeader(TOKEN_HEADER);
 
-        if(!ObjectUtils.isEmpty(token) && token.startsWith(TOKEN_PREFIX)){
+        if (!ObjectUtils.isEmpty(token) && token.startsWith(TOKEN_PREFIX)) {
             return token.substring(TOKEN_PREFIX.length());
         }
 

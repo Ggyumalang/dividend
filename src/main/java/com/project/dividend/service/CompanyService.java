@@ -1,6 +1,6 @@
 package com.project.dividend.service;
 
-import com.project.dividend.exception.impl.NoCompanyException;
+import com.project.dividend.exception.DividendException;
 import com.project.dividend.model.Company;
 import com.project.dividend.model.ScrapedResult;
 import com.project.dividend.persist.entity.CompanyEntity;
@@ -11,7 +11,6 @@ import com.project.dividend.scraper.YahooFinanceScraper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.Trie;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +19,8 @@ import org.springframework.util.ObjectUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.project.dividend.model.constants.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,21 +35,22 @@ public class CompanyService {
 
     public Company save(String ticker) {
         if (companyRepository.existsByTicker(ticker)) {
-            throw new RuntimeException("already exists ticker -> " + ticker);
+            throw new DividendException(ALREADY_EXIST_TICKER);
         }
 
         return storeCompanyAndDividend(ticker);
     }
 
-    public Page<CompanyEntity> getAllCompany(Pageable pageable) {
-        return this.companyRepository.findAll(pageable);
+    public Page<Company> getAllCompany(Pageable pageable) {
+        Page<CompanyEntity> companyEntityPage = this.companyRepository.findAll(pageable);
+        return companyEntityPage.map(Company::fromEntity);
     }
 
     private Company storeCompanyAndDividend(String ticker) {
         // ticker를 기준으로 회사를 스크래핑
         Company company = yahooFinanceScraper.scrapCompanyByTicker(ticker);
         if (ObjectUtils.isEmpty(company)) {
-            throw new RuntimeException("failed to scrap ticker -> " + ticker);
+            throw new DividendException(SCRAPING_FAILED);
         }
         //해당 회사가 존재할 경우, 회사의 배당금 정보 스크래핑
         ScrapedResult scrapedResult = yahooFinanceScraper.scrap(company);
@@ -61,15 +63,8 @@ public class CompanyService {
                 .collect(Collectors.toList());
 
         dividendRepository.saveAll(dividendEntities);
-        return company;
-    }
 
-    public List<String> getCompanyNamesByKeyword(String keyword) {
-        Pageable limit = PageRequest.of(0, 10);
-        Page<CompanyEntity> companyEntityList = companyRepository.findByNameStartingWithIgnoreCase(keyword, limit);
-        return companyEntityList.stream()
-                .map(e -> e.getName())
-                .collect(Collectors.toList());
+        return company;
     }
 
     public void addAutocompleteKeyword(String keyword) {
@@ -78,6 +73,7 @@ public class CompanyService {
         }
     }
 
+    //1. Keyword를 통해서 회사 이름을 가져오는 방법 - Trie를 이용
     public List<String> autocomplete(String keyword) {
         if (ObjectUtils.isEmpty(keyword)) {
             return new ArrayList<>();
@@ -92,14 +88,17 @@ public class CompanyService {
         trie.remove(keyword);
     }
 
+
     @Transactional
     public String deleteCompany(String ticker) {
         CompanyEntity companyEntity = companyRepository.findByTicker(ticker)
-                .orElseThrow(NoCompanyException::new);
+                .orElseThrow(() -> new DividendException(COMPANY_NOT_FOUND));
 
         dividendRepository.deleteAllByCompanyId(companyEntity.getId());
         companyRepository.delete(companyEntity);
         deleteAutocompleteKeyword(companyEntity.getName());
         return companyEntity.getName();
     }
+
+
 }

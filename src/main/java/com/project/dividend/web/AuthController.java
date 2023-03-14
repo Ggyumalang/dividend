@@ -1,7 +1,8 @@
 package com.project.dividend.web;
 
-import com.project.dividend.model.Auth;
-import com.project.dividend.persist.entity.MemberEntity;
+import com.project.dividend.model.MemberDto;
+import com.project.dividend.model.SignIn;
+import com.project.dividend.model.SignUp;
 import com.project.dividend.security.TokenProvider;
 import com.project.dividend.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -23,15 +24,14 @@ public class AuthController {
     private final TokenProvider tokenProvider;
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody Auth.SignUp request) {
-        MemberEntity memberEntity = memberService.register(request);
-        return ResponseEntity.ok(memberEntity);
+    public ResponseEntity<?> signup(@RequestBody SignUp.Request request) {
+        return ResponseEntity.ok(memberService.register(request));
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<?> signin(@RequestBody Auth.SignIn request) {
-        MemberEntity memberEntity = this.memberService.authenticate(request);
-        String token = this.tokenProvider.generateToken(memberEntity.getUsername(), memberEntity.getRoles());
+    public ResponseEntity<?> signin(@RequestBody SignIn.Request request) {
+        MemberDto memberDto = this.memberService.authenticate(request);
+        String token = this.tokenProvider.generateToken(memberDto.getUsername(), memberDto.getRoles());
         log.info("user login -> " + request.getUsername());
         return ResponseEntity.ok(token);
     }

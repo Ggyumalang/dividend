@@ -1,9 +1,11 @@
 package com.project.dividend.scraper;
 
+import com.project.dividend.exception.DividendException;
 import com.project.dividend.model.Company;
 import com.project.dividend.model.Dividend;
 import com.project.dividend.model.ScrapedResult;
 import com.project.dividend.model.constants.Month;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -15,12 +17,21 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.project.dividend.model.constants.ErrorCode.INVALID_MONTH;
+import static com.project.dividend.model.constants.ErrorCode.SCRAPING_FAILED;
+
+@Slf4j
 @Component
 public class YahooFinanceScraper implements Scraper {
 
     private static final String STATISTICS_URL = "https://finance.yahoo.com/quote/%s/history?period1=%d&period2=%d&interval=1mo";
     private static final String SUMMARY_URL = "https://finance.yahoo.com/quote/%s?p=%s";
     private static final long START_TIME = 86400; // 60 * 60 * 24 1일
+
+    private static final String ATTRIBUTE_KEY = "data-test";
+    private static final String ATTRIBUTE_VALUE = "historical-prices";
+    private static final String DIVIDEND = "Dividend";
 
     @Override
     public ScrapedResult scrap(Company company) {
@@ -32,14 +43,14 @@ public class YahooFinanceScraper implements Scraper {
             Connection connection = Jsoup.connect(url);
             Document document = connection.get();
 
-            Elements parsingDivs = document.getElementsByAttributeValue("data-test", "historical-prices");
+            Elements parsingDivs = document.getElementsByAttributeValue(ATTRIBUTE_KEY, ATTRIBUTE_VALUE);
             Element tableEle = parsingDivs.get(0); //table 전체를 가져온다.
 
             Element tbody = tableEle.children().get(1);// 0 : head / 1 : body / 2 : foot
             List<Dividend> dividends = new ArrayList<>();
             for (Element e : tbody.children()) {
                 String txt = e.text();
-                if (!txt.endsWith("Dividend")) {
+                if (!txt.endsWith(DIVIDEND)) {
                     continue;
                 }
 
@@ -50,7 +61,7 @@ public class YahooFinanceScraper implements Scraper {
                 String dividend = splits[3];
 
                 if (month < 0) {
-                    throw new RuntimeException("Unexpected Month enum value -> " + splits[0]);
+                    throw new DividendException(INVALID_MONTH);
                 }
 
                 dividends.add(Dividend.builder()
@@ -60,8 +71,8 @@ public class YahooFinanceScraper implements Scraper {
             }
             scrapResult.setDividends(dividends);
         } catch (IOException e) {
-            //TODO
-            e.printStackTrace();
+            log.error("IOException is occured", e);
+            throw new DividendException(SCRAPING_FAILED);
         }
         return scrapResult;
     }
@@ -89,8 +100,8 @@ public class YahooFinanceScraper implements Scraper {
                     .name(title.toString().trim())
                     .build();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("IOException is occured", e);
+            throw new DividendException(SCRAPING_FAILED);
         }
-        return null;
     }
 }

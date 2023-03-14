@@ -1,6 +1,6 @@
 package com.project.dividend.service;
 
-import com.project.dividend.exception.impl.NoCompanyException;
+import com.project.dividend.exception.DividendException;
 import com.project.dividend.model.Company;
 import com.project.dividend.model.Dividend;
 import com.project.dividend.model.ScrapedResult;
@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.project.dividend.model.constants.ErrorCode.COMPANY_NOT_FOUND;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,10 +32,9 @@ public class FinanceService {
     //자주 변경되는 데이터인가?
     @Cacheable(key = "#companyName", value = CacheKey.KEY_FINANCE)
     public ScrapedResult getDividendByCompanyName(String companyName) {
-        log.info("search company -> " + companyName);
         //1. 회사명을 기준으로 회사 정보 조회
         CompanyEntity companyEntity = companyRepository.findByName(companyName)
-                .orElseThrow(NoCompanyException::new);
+                .orElseThrow(() -> new DividendException(COMPANY_NOT_FOUND));
 
         //2. 조회된 회사 ID로 배당금 정보 조회
         List<DividendEntity> dividendEntityList = dividendRepository.findAllByCompanyId(companyEntity.getId());
