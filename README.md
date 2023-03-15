@@ -14,6 +14,9 @@
 
 3. 캐시 서버를 이용해 기존에 조회했던 회사의 정보를 신속하게 조회합니다.
 
+## ERD
+<img src="image/ERD.png"/>
+
 ## API명세
 
 #### 1. GET - finance/dividend/{companyName}
