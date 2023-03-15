@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ErrorResponse> handleException(Exception e) {
-        log.error("Exception is occurred " , e);
+        log.error("Exception is occurred ", e);
         ErrorResponse er = ErrorResponse.builder()
                 .errorCode(INTERNAL_SERVER_ERROR)
                 .status(INTERNAL_SERVER_ERROR.getStatus())

@@ -1,5 +1,8 @@
-package com.project.dividend.security;
+package com.project.dividend.config;
 
+import com.project.dividend.jwt.JwtAuthenticationEntryPoint;
+import com.project.dividend.jwt.JwtAuthenticationFilter;
+import com.project.dividend.jwt.JwtExceptionFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;

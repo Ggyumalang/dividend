@@ -3,7 +3,7 @@ package com.project.dividend.web;
 import com.project.dividend.model.MemberDto;
 import com.project.dividend.model.SignIn;
 import com.project.dividend.model.SignUp;
-import com.project.dividend.security.TokenProvider;
+import com.project.dividend.jwt.TokenProvider;
 import com.project.dividend.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

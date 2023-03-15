@@ -28,6 +28,7 @@ public class CompanyController {
     private final CacheManager redisCacheManager;
 
     @GetMapping("/autocomplete")
+    @PreAuthorize("hasRole('READ')")
     public ResponseEntity<List<String>> autocomplete(@RequestParam String keyword) {
         // 트라이 자료구조를 이용해서 autocomplete 구현
         List<String> autocomplete = companyService.autocomplete(keyword);

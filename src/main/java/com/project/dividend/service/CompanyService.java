@@ -97,6 +97,7 @@ public class CompanyService {
         dividendRepository.deleteAllByCompanyId(companyEntity.getId());
         companyRepository.delete(companyEntity);
         deleteAutocompleteKeyword(companyEntity.getName());
+
         return companyEntity.getName();
     }
 

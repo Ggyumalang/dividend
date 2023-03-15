@@ -18,8 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.project.dividend.model.constants.ErrorCode.INVALID_MONTH;
-import static com.project.dividend.model.constants.ErrorCode.SCRAPING_FAILED;
+import static com.project.dividend.model.constants.ErrorCode.*;
 
 @Slf4j
 @Component
@@ -35,7 +34,9 @@ public class YahooFinanceScraper implements Scraper {
 
     @Override
     public ScrapedResult scrap(Company company) {
-        var scrapResult = new ScrapedResult();
+        log.info("scrap is started : " + LocalDateTime.now()
+                + " ticker : " + company.getTicker() + " company : " + company.getName());
+        ScrapedResult scrapResult = new ScrapedResult();
         scrapResult.setCompany(company);
         try {
             long now = System.currentTimeMillis() / 1000;
@@ -71,14 +72,17 @@ public class YahooFinanceScraper implements Scraper {
             }
             scrapResult.setDividends(dividends);
         } catch (IOException e) {
-            log.error("IOException is occured", e);
+            log.error("Scrap is failed by IOException", e);
             throw new DividendException(SCRAPING_FAILED);
         }
+        log.info("scrap is finished : " + LocalDateTime.now()
+                + " ticker : " + company.getTicker() + " company : " + company.getName());
         return scrapResult;
     }
 
     @Override
     public Company scrapCompanyByTicker(String ticker) {
+        log.info("scrapCompanyByTicker is started : " + LocalDateTime.now() + " ticker : " + ticker);
         String url = String.format(SUMMARY_URL, ticker, ticker);
 
         try {
@@ -95,12 +99,20 @@ public class YahooFinanceScraper implements Scraper {
                 title.append(word).append(" ");
             }
 
+            if (title.toString().trim().length() == 0) {
+                log.error("유효하지 않은 TICKER라 회사명이 추출되지 않았습니다. " + ticker);
+                throw new DividendException(INVALID_TICKER);
+            }
+
+            log.info("scrapCompanyByTicker is finished : " + LocalDateTime.now()
+                    + " ticker : " + ticker + " companyName : " + title.toString().trim());
+
             return Company.builder()
                     .ticker(ticker)
                     .name(title.toString().trim())
                     .build();
         } catch (IOException e) {
-            log.error("IOException is occured", e);
+            log.error("scrapCompanyByTicker is failed by IOException", e);
             throw new DividendException(SCRAPING_FAILED);
         }
     }
